@@ -1,0 +1,51 @@
+const readline = require('readline');
+const mysql = require('mysql2/promise');
+ 
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout
+});
+
+async function addNewEmployee() {
+  const employee = {};
+
+  employee.first_name = await askQuestion('Enter employee first name: ');
+  employee.last_name = await askQuestion('Enter employee last name: ');
+  employee.role_id = await askQuestion('Enter employee role ID: ');
+  employee.manager_id = await askQuestion('Enter employee manager ID (or press enter for null): ');
+
+  if (employee.manager_id === '') {
+    employee.manager_id = null;
+  }
+
+  const connection = await mysql.createConnection({
+    host: 'localhost',
+    user: 'your_username',
+    password: 'your_password',
+    database: 'employee_db'
+  });
+
+  try {
+    const [result] = await connection.execute(
+      'INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)',
+      [employee.first_name, employee.last_name, employee.role_id, employee.manager_id]
+    );
+
+    console.log(`New employee added with ID: ${result.insertId}`);
+  } catch (error) {
+    console.error('Error adding new employee:', error);
+  } finally {
+    await connection.end();
+    rl.close();
+  }
+}
+
+function askQuestion(question) {
+  return new Promise((resolve) => {
+    rl.question(question, (answer) => {
+      resolve(answer);
+    });
+  });
+}
+
+addNewEmployee();
